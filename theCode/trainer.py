@@ -244,6 +244,47 @@ class condGANTrainer(object):
 
         gen_iterations = 0
         # gen_iterations = start_epoch * self.num_batches
+
+
+
+        if start_epoch == 0 :
+            serrD0 = []
+            serrD1 = []
+            serrD2 = []
+            serrD_total = []
+            skl_loss = []
+            serrG= []
+            serrG_total = []
+        else:
+            with open('/content/drive/My Drive/slgl/serrD0.pkl', 'rb') as f:
+                serrD0 = pickle.load(f)
+
+
+            with open('/content/drive/My Drive/slgl/serrD1.pkl', 'rb') as f:
+                serrD1 = pickle.load(f)
+
+
+            with open('/content/drive/My Drive/slgl/serrD2.pkl', 'rb') as f:
+                serrD2 = pickle.load(f)
+
+
+            with open('/content/drive/My Drive/slgl/serrD_total.pkl', 'rb') as f:
+                serrD_total = pickle.load(f)
+
+
+            with open('/content/drive/My Drive/slgl/skl_loss.pkl', 'rb') as f:
+                skl_loss = pickle.load(f)
+
+
+            with open('/content/drive/My Drive/slgl/serrG.pkl', 'rb') as f:
+                serrG = pickle.load(f)
+
+
+            with open('/content/drive/My Drive/slgl/serrG_total.pkl', 'rb') as f:
+                serrG_total = pickle.load(f)
+
+
+
         for epoch in range(start_epoch, self.max_epoch):
             start_t = time.time()
 
@@ -293,9 +334,20 @@ class condGANTrainer(object):
                 D_logs = ''
                 for i in range(len(netsD)):
                     netsD[i].zero_grad()
-                    errD = discriminator_loss(netsD[i], imgs[i], fake_imgs[i],
-                                                sent_emb, real_labels, fake_labels)
+                    errD = discriminator_loss(netsD[i], imgs[i], fake_imgs[i], sent_emb, real_labels, fake_labels)
                     # backward and update parameters
+
+
+                    if i == 0 :
+                        serrD0.append(errD.item())
+                    if i == 1 :
+                        serrD1.append(errD.item())
+                    if i == 2 :
+                        serrD2.append(errD.item())
+                    
+
+
+
                     errD.backward()
                     optimizersD[i].step()
                     errD_total += errD
@@ -305,6 +357,11 @@ class condGANTrainer(object):
                     #print("----------------------------------------------------------")
                     D_logs += 'errD%d: %.2f ' % (i, errD.item())
                 
+
+
+
+                serrD_total.append(errD_total.item())
+
                 #print ('3.update_network_D_time : ' ,time.time() -  update_network_D_time)
                 #######################################################
                 # (4) Update G network: maximize log(D(G(z)))
@@ -317,15 +374,52 @@ class condGANTrainer(object):
                 # do not need to compute gradient for Ds
                 # self.set_requires_grad_value(netsD, False)
                 netG.zero_grad()
-                errG_total, G_logs = generator_loss(netsD, image_encoder, fake_imgs, real_labels,
-                                    words_embs, sent_emb, match_labels, cap_lens, class_ids)
+                errG_total, G_logs = generator_loss(netsD, image_encoder, fake_imgs, real_labels, words_embs, sent_emb, match_labels, cap_lens, class_ids)
                 kl_loss = KL_loss(mu, logvar)
+
+
+
+                skl_loss.append(kl_loss.item())
+                serrG.append(errG_total.item())
+
+
+
                 errG_total += kl_loss
+
+                serrG_total.append(errG_total.item())
+
                 G_logs += 'kl_loss: %.2f ' % kl_loss.item()
                 # backward and update parameters
                 errG_total.backward()
                 optimizerG.step()
                 
+
+
+
+
+                with open('/content/drive/My Drive/slgl/serrD0.pkl', 'wb') as f:
+                    pickle.dump(serrD0, f)
+                
+                with open('/content/drive/My Drive/slgl/serrD1.pkl', 'wb') as f:
+                    pickle.dump(serrD1, f)
+                
+                with open('/content/drive/My Drive/slgl/serrD2.pkl', 'wb') as f:
+                    pickle.dump(serrD2, f)
+                
+                with open('/content/drive/My Drive/slgl/skl_loss.pkl', 'wb') as f:
+                    pickle.dump(skl_loss, f)
+                
+                with open('/content/drive/My Drive/slgl/serrG.pkl', 'wb') as f:
+                    pickle.dump(serrG, f)
+                
+                with open('/content/drive/My Drive/slgl/serrG_total.pkl', 'wb') as f:
+                    pickle.dump(serrG_total, f)
+                
+                
+
+
+
+
                 for p, avg_p in zip(netG.parameters(), avg_param_G):
                     avg_p.mul_(0.999).add_(0.001, p.data)
 
