@@ -406,7 +406,10 @@ class condGANTrainer(object):
                 
                 with open('/content/drive/My Drive/slgl/serrD2.pkl', 'wb') as f:
                     pickle.dump(serrD2, f)
-                
+
+                with open('/content/drive/My Drive/slgl/serrD_total.pkl', 'wb') as f:
+                    pickle.dump(serrD_total, f)
+
                 with open('/content/drive/My Drive/slgl/skl_loss.pkl', 'wb') as f:
                     pickle.dump(skl_loss, f)
                 
